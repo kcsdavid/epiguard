@@ -4,11 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <script src="https://cdn.tailwindcss.com"></script>
-    <title>EpiGuard PRO - Full Med</title>
+    <title>EpiGuard PRO v7</title>
     <style>
         @keyframes pulse-red { 0%, 100% { background-color: #000; } 50% { background-color: #dc2626; } }
         .emergency-active { animation: pulse-red 0.5s infinite !important; }
         .bg-galaxy { background: radial-gradient(circle at 50% 0%, #1e1b4b 0%, #000000 80%); background-color: #000; }
+        @keyframes blink-red { 0%, 100% { color: white; } 50% { color: #ef4444; } }
+        .blink-med { animation: blink-red 1s infinite; }
     </style>
 </head>
 <body id="main-body" class="bg-galaxy text-white font-sans min-h-screen transition-all duration-500 overflow-x-hidden">
@@ -32,16 +34,16 @@
         <div id="patient-info" class="w-full max-w-md space-y-3 mb-8">
             <div class="bg-white/5 border border-blue-500/20 rounded-2xl p-4">
                 <p class="text-blue-400 text-[10px] font-bold uppercase tracking-widest">Pacient</p>
-                <p class="text-xl font-bold text-white">ANDREI POPESCU</p>
+                <p class="text-xl font-bold text-white uppercase">Andrei Popescu</p>
             </div>
             
             <div class="grid grid-cols-2 gap-3">
                 <div class="bg-blue-900/40 border border-blue-400/50 rounded-2xl p-4">
                     <p class="text-blue-300 text-[10px] font-bold uppercase tracking-widest">Diagnostic</p>
-                    <p class="text-lg font-black text-white italic uppercase leading-tight">EPILEPSIE</p>
+                    <p class="text-lg font-black italic uppercase leading-tight blink-med">EPILEPSIE</p>
                 </div>
                 <div class="bg-red-900/30 border border-red-500/40 rounded-2xl p-4">
-                    <p class="text-red-400 text-[10px] font-bold uppercase tracking-widest">Grupa Sanguină</p>
+                    <p class="text-red-400 text-[10px] font-bold uppercase tracking-widest">Grupă Sanguină</p>
                     <p class="text-2xl font-black text-white">A II (Rh+)</p>
                 </div>
             </div>
@@ -60,5 +62,83 @@
 
         <div id="emergency-ui" class="hidden w-full max-w-md text-center p-8 bg-red-600 rounded-[2.5rem] border-4 border-white mb-8 shadow-2xl">
             <p class="text-white font-black text-3xl mb-6 animate-bounce">🚨 APELARE 112...</p>
-            <a id="sms-btn" href="#" class="block w-full py-6 bg-white text-red-600 font-black rounded-2xl text-2xl uppercase mb-4 shadow-xl">Trimite SMS de Urgență</a>
-            <button onclick="stopEverything()"
+            <a id="sms-btn" href="#" class="block w-full py-6 bg-white text-red-600 font-black rounded-2xl text-2xl uppercase mb-4 shadow-xl">Trimite SMS Urgență</a>
+            <button onclick="stopEverything()" class="w-full py-4 bg-black/60 text-white font-black rounded-2xl text-lg uppercase border border-white/40">OPRIRE / RESET</button>
+        </div>
+
+        <button id="main-btn" onclick="startSystem()" class="mt-auto mb-4 w-full max-w-md py-6 bg-gradient-to-r from-blue-600 to-purple-700 rounded-3xl font-black text-2xl uppercase border border-white/20 shadow-xl active:scale-95 transition-all">
+            ACTIVARE SISTEM
+        </button>
+
+        <div id="debug-log" class="text-[9px] text-gray-500 font-mono w-full text-center mt-2 opacity-50">Sistem în așteptare. Apăsați butonul de sus.</div>
+    </div>
+
+<script>
+    let isActive = false, hasAlerted = false, isCountingDown = false;
+    let countdownTimer = null, audioCtx = null, sirenInterval = null;
+    let timeLeft = 5, clickCount = 0, videoTrack = null, isFlashOn = false;
+
+    async function startSystem() {
+        if (isActive) return;
+        try {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (typeof DeviceMotionEvent.requestPermission === 'function') {
+                const res = await DeviceMotionEvent.requestPermission();
+                if (res !== 'granted') throw new Error("Senzori refuzați");
+            }
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                videoTrack = stream.getVideoTracks()[0];
+            } catch (e) { console.warn("Blitz indisponibil."); }
+            
+            isActive = true;
+            document.getElementById('main-btn').innerText = "SISTEM ACTIV";
+            document.getElementById('main-btn').className = "mt-auto mb-4 w-full max-w-md py-6 bg-black border-2 border-blue-500 text-blue-400 rounded-3xl font-black text-2xl uppercase shadow-inner";
+            
+            initMotion();
+        } catch (err) { alert("Eroare: " + err.message + ". Folosește HTTPS!"); }
+    }
+
+    function initMotion() {
+        window.addEventListener('devicemotion', (e) => {
+            if (hasAlerted || !isActive || isCountingDown) return;
+            let a = e.acceleration;
+            if (a && a.x !== null) {
+                let total = Math.sqrt(a.x**2 + a.y**2 + a.z**2);
+                document.getElementById('accel-val').innerText = total.toFixed(2);
+                document.getElementById('accel-bar').style.width = Math.min((total / 45) * 100, 100) + "%";
+                if (total > 45) startCountdown();
+            }
+        });
+    }
+
+    function forceTrigger() { if (isActive) { clickCount++; if (clickCount >= 3) { clickCount = 0; startCountdown(); } setTimeout(() => clickCount = 0, 2000); } }
+
+    function toggleFlash(state) {
+        if (videoTrack && videoTrack.applyConstraints) {
+            videoTrack.applyConstraints({ advanced: [{ torch: state }] }).catch(() => {});
+        }
+    }
+
+    function startCountdown() {
+        if (isCountingDown) return;
+        isCountingDown = true; timeLeft = 5;
+        document.getElementById('monitor-box').classList.add('hidden');
+        document.getElementById('patient-info').classList.add('hidden');
+        document.getElementById('timer-ui').classList.remove('hidden');
+
+        countdownTimer = setInterval(() => {
+            timeLeft--;
+            document.getElementById('countdown-number').innerText = timeLeft;
+            let o = audioCtx.createOscillator(); o.connect(audioCtx.destination);
+            o.frequency.value = 400; o.start(); o.stop(audioCtx.currentTime + 0.1);
+            toggleFlash(true); setTimeout(() => toggleFlash(false), 150);
+            if (timeLeft <= 0) { clearInterval(countdownTimer); triggerEmergency(); }
+        }, 1000);
+    }
+
+    function triggerEmergency() {
+        hasAlerted = true; isCountingDown = false;
+        document.getElementById('timer-ui').classList.add('hidden');
+        document.getElementById('emergency-ui').classList.remove('hidden');
+        document.getElementById('main-body').classList.add('emergency-active');
