@@ -13,19 +13,19 @@
         .emergency-active { animation: pulse-red 1s infinite; }
     </style>
 </head>
-<header class="flex flex-col items-center mt-4 mb-6">
-    <div class="relative">
-        <div class="absolute inset-0 bg-emerald-500 blur-3xl opacity-30 animate-pulse"></div>
-        <img src="logo.jpeg" alt="Logo EpiGuard" class="relative w-24 h-24 object-contain rounded-2xl shadow-2xl">
-    </div>
-    <h1 class="text-2xl font-extrabold mt-4 tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-500 text-center">
-        EPIGUARD PRO
-    </h1>
-</header>
+<body id="main-body" class="bg-[#0f172a] text-white font-sans overflow-hidden transition-colors duration-500">
 
-<button id="main-btn" onclick="startSystem()" class="mt-auto mb-10 w-full py-5 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-3xl font-black text-xl tracking-wide shadow-[0_0_20px_rgba(16,185,129,0.3)] active:scale-95 transition-all uppercase">
-    Activează Monitorizarea
-</button>
+    <div class="fixed inset-0 bg-gradient-to-br from-emerald-900/20 to-slate-900/20 z-0"></div>
+
+    <div class="relative z-10 flex flex-col h-screen p-6">
+        
+        <header class="flex flex-col items-center mt-4 mb-6">
+            <div class="relative">
+                <div class="absolute inset-0 bg-emerald-500 blur-3xl opacity-30 animate-pulse"></div>
+                <img src="logo.jpeg" alt="Logo EpiGuard" class="relative w-24 h-24 object-contain rounded-2xl shadow-2xl">
+            </div>
+            <h1 class="text-2xl font-extrabold mt-4 tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-500 text-center">
+                EPIGUARD PRO
             </h1>
         </header>
 
@@ -45,7 +45,7 @@
 
         <div class="grid grid-cols-1 gap-3 mb-4">
             <div class="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4">
-                <p class="text-cyan-400 text-[10px] font-bold uppercase">Pacient / Diagnostic</p>
+                <p class="text-emerald-400 text-[10px] font-bold uppercase">Pacient / Diagnostic</p>
                 <p class="text-md font-medium text-white/90">Andrei Popescu - Epilepsie</p>
             </div>
             <div class="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 border-l-4 border-l-red-500">
@@ -62,8 +62,8 @@
             </a>
         </div>
 
-        <button id="main-btn" onclick="startSystem()" class="mt-auto mb-6 w-full py-5 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-2xl font-bold text-lg shadow-lg active:scale-95 transition-all">
-            ACTIVEAZĂ MONITORIZAREA
+        <button id="main-btn" onclick="startSystem()" class="mt-auto mb-10 w-full py-5 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-3xl font-black text-xl tracking-wide shadow-lg active:scale-95 transition-all uppercase">
+            Activează Monitorizarea
         </button>
     </div>
 
@@ -84,11 +84,12 @@
     function activate() {
         isActive = true;
         document.getElementById('status-text').innerText = "SISTEM ACTIV";
-        document.getElementById('status-text').classList.replace('text-gray-500', 'text-green-400');
-        document.getElementById('status-dot').classList.replace('bg-gray-600', 'bg-green-500');
+        document.getElementById('status-text').classList.replace('text-gray-500', 'text-emerald-400');
+        document.getElementById('status-dot').classList.replace('bg-gray-600', 'bg-emerald-500');
         document.getElementById('status-dot').classList.add('animate-ping');
         document.getElementById('main-btn').innerText = "PROTECTIE ACTIVĂ";
-        document.getElementById('main-btn').classList.replace('from-cyan-600', 'from-gray-700');
+        document.getElementById('main-btn').classList.replace('from-emerald-600', 'from-gray-700');
+        document.getElementById('main-btn').classList.replace('to-teal-600', 'to-gray-800');
         
         window.addEventListener('devicemotion', (e) => {
             if (hasAlerted || !isActive) return;
@@ -98,11 +99,6 @@
             document.getElementById('accel-val').innerText = total.toFixed(2);
             if (total > 45) trigger(); 
         });
-
-        // Background Heartbeat
-        if (navigator.geolocation) {
-            navigator.geolocation.watchPosition(() => {}, () => {}, { enableHighAccuracy: false });
-        }
     }
 
     function trigger() {
@@ -111,7 +107,6 @@
         document.getElementById('main-body').classList.add('emergency-active');
         document.getElementById('emergency-ui').classList.remove('hidden');
         
-        // Sirenă sonoră
         setInterval(() => {
             let o = audioCtx.createOscillator();
             let g = audioCtx.createGain();
@@ -120,14 +115,13 @@
             o.start(); o.stop(audioCtx.currentTime + 0.3);
         }, 600);
 
-        // SMS și GPS
         const btn = document.getElementById('sms-btn');
         const nr = "+40729592904";
         let msg = "ALERTA EPIGUARD! Andrei a suferit o criza. Ajutor!";
         btn.href = `sms:${nr}?body=${encodeURIComponent(msg)}`;
 
         navigator.geolocation.getCurrentPosition((pos) => {
-            let maps = `https://maps.google.com/?q=${pos.coords.latitude},${pos.coords.longitude}`;
+            let maps = `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`;
             btn.href = `sms:${nr}?body=${encodeURIComponent(msg + " Locatie: " + maps)}`;
             btn.innerText = "TRIMITE SMS (CU LOCAȚIE GPS)";
         }, null, {enableHighAccuracy: true});
