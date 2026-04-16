@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <script src="https://cdn.tailwindcss.com"></script>
-    <title>EpiGuard PRO V7</title>
+    <title>EpiGuard PRO - Full Med</title>
     <style>
         @keyframes pulse-red { 0%, 100% { background-color: #000; } 50% { background-color: #dc2626; } }
         .emergency-active { animation: pulse-red 0.5s infinite !important; }
@@ -16,9 +16,9 @@
     <div class="relative z-10 flex flex-col items-center p-6 min-h-screen">
         
         <header id="header-section" class="flex flex-col items-center mt-4 mb-6 text-center w-full">
-            <img src="logo.jpeg" alt="Logo" class="w-52 h-52 object-contain rounded-full border border-white/10 mb-4">
+            <img src="logo.jpeg" alt="Logo" class="w-48 h-48 object-contain rounded-full border border-white/10 mb-4 shadow-2xl">
             <h1 id="title-text" class="text-5xl font-black mb-2"><span class="text-blue-500">Epi</span><span class="text-purple-500">Guard</span></h1>
-            <img src="med.jpeg" alt="MedAlert" class="w-48 h-auto opacity-80 rounded-lg">
+            <img src="med.jpeg" alt="MedAlert" class="w-44 h-auto opacity-90 rounded-lg">
         </header>
 
         <div id="monitor-box" class="w-full max-w-md bg-black/60 backdrop-blur-xl border border-white/10 rounded-[2.5rem] p-8 mb-6 text-center shadow-2xl cursor-pointer" onclick="forceTrigger()">
@@ -30,146 +30,35 @@
         </div>
 
         <div id="patient-info" class="w-full max-w-md space-y-3 mb-8">
-            <div class="bg-blue-900/40 border border-blue-400/50 rounded-2xl p-5">
-                <p class="text-blue-300 text-[10px] font-bold uppercase tracking-widest">Diagnostic</p>
-                <p class="text-2xl font-black text-white italic uppercase">EPILEPSIE</p>
+            <div class="bg-white/5 border border-blue-500/20 rounded-2xl p-4">
+                <p class="text-blue-400 text-[10px] font-bold uppercase tracking-widest">Pacient</p>
+                <p class="text-xl font-bold text-white">ANDREI POPESCU</p>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-3">
+                <div class="bg-blue-900/40 border border-blue-400/50 rounded-2xl p-4">
+                    <p class="text-blue-300 text-[10px] font-bold uppercase tracking-widest">Diagnostic</p>
+                    <p class="text-lg font-black text-white italic uppercase leading-tight">EPILEPSIE</p>
+                </div>
+                <div class="bg-red-900/30 border border-red-500/40 rounded-2xl p-4">
+                    <p class="text-red-400 text-[10px] font-bold uppercase tracking-widest">Grupa Sanguină</p>
+                    <p class="text-2xl font-black text-white">A II (Rh+)</p>
+                </div>
+            </div>
+
+            <div class="bg-white/5 border border-l-8 border-l-red-600 rounded-2xl p-4">
+                <p class="text-purple-400 text-[10px] font-bold uppercase tracking-widest">Alergii Critice</p>
+                <p class="text-lg text-red-500 font-black uppercase italic">Penicilină, Polen</p>
             </div>
         </div>
 
         <div id="timer-ui" class="hidden w-full max-w-md text-center p-8 bg-yellow-600 rounded-[2.5rem] border-4 border-white mb-6 animate-pulse">
             <p class="text-white font-black text-xl italic uppercase">Impact Detectat!</p>
-            <p class="text-white text-7xl font-black mb-6" id="countdown-number">5</p>
-            <button onclick="cancelAlert()" class="w-full py-5 bg-black text-white font-black rounded-2xl text-xl uppercase">ANULEAZĂ</button>
+            <p class="text-white text-8xl font-black mb-6" id="countdown-number">5</p>
+            <button onclick="cancelAlert()" class="w-full py-5 bg-black text-white font-black rounded-2xl text-xl uppercase border-2 border-white">ANULEAZĂ</button>
         </div>
 
         <div id="emergency-ui" class="hidden w-full max-w-md text-center p-8 bg-red-600 rounded-[2.5rem] border-4 border-white mb-8 shadow-2xl">
-            <p class="text-white font-black text-2xl mb-6">🚨 ALERTĂ ACTIVĂ</p>
-            <a id="sms-btn" href="#" class="block w-full py-6 bg-white text-red-600 font-black rounded-2xl text-2xl uppercase mb-4">Trimite SMS</a>
-            <button onclick="stopEverything()" class="w-full py-4 bg-black/60 text-white font-black rounded-2xl text-lg uppercase">STOP</button>
-        </div>
-
-        <button id="main-btn" onclick="startSystem()" class="mt-auto mb-4 w-full max-w-md py-6 bg-gradient-to-r from-blue-600 to-purple-700 rounded-3xl font-black text-2xl uppercase border border-white/20 shadow-xl">
-            Activare
-        </button>
-
-        <div id="debug-log" class="text-[10px] text-gray-500 font-mono w-full max-w-md text-center bg-black/40 p-2 rounded">Status: Sistem în așteptare...</div>
-    </div>
-
-<script>
-    let isActive = false, hasAlerted = false, isCountingDown = false;
-    let countdownTimer = null, audioCtx = null, sirenInterval = null;
-    let timeLeft = 5, clickCount = 0, videoTrack = null, isFlashOn = false;
-
-    function log(msg) { document.getElementById('debug-log').innerText = "Status: " + msg; }
-
-    async function startSystem() {
-        if (isActive) return;
-        log("Se solicită permisiuni...");
-        
-        try {
-            // 1. Audio Context
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            
-            // 2. Motion Permission (iPhone focus)
-            if (typeof DeviceMotionEvent.requestPermission === 'function') {
-                const res = await DeviceMotionEvent.requestPermission();
-                if (res !== 'granted') throw new Error("Senzori refuzați");
-            }
-            log("Senzori OK. Se cere Camera...");
-
-            // 3. Camera Permission (Flash)
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-                videoTrack = stream.getVideoTracks()[0];
-                log("Sistem complet ACTIV (Senzori + Flash)");
-            } catch (e) {
-                log("Activ fără Blitz (Camera refuzată)");
-            }
-
-            activateLogic();
-        } catch (err) {
-            log("Eroare fatală: " + err.message);
-            alert("Eroare: " + err.message + ". Verifică dacă ești pe HTTPS!");
-        }
-    }
-
-    function activateLogic() {
-        isActive = true;
-        document.getElementById('main-btn').innerText = "SISTEM ACTIV";
-        document.getElementById('main-btn').className = "mt-auto mb-4 w-full max-w-md py-6 bg-green-900 border-2 border-green-500 rounded-3xl font-black text-2xl text-green-400 uppercase";
-        
-        window.addEventListener('devicemotion', (e) => {
-            if (hasAlerted || !isActive || isCountingDown) return;
-            let a = e.acceleration;
-            if (a && a.x !== null) {
-                let total = Math.sqrt(a.x**2 + a.y**2 + a.z**2);
-                document.getElementById('accel-val').innerText = total.toFixed(2);
-                document.getElementById('accel-bar').style.width = Math.min((total / 45) * 100, 100) + "%";
-                if (total > 45) startCountdown();
-            }
-        });
-    }
-
-    function forceTrigger() { if (isActive) { clickCount++; if (clickCount >= 3) { clickCount = 0; startCountdown(); } setTimeout(() => clickCount = 0, 2000); } }
-
-    function toggleFlash(state) {
-        if (videoTrack && videoTrack.applyConstraints) {
-            videoTrack.applyConstraints({ advanced: [{ torch: state }] }).catch(() => {});
-        }
-    }
-
-    function startCountdown() {
-        if (isCountingDown) return;
-        isCountingDown = true; timeLeft = 5;
-        document.getElementById('monitor-box').classList.add('hidden');
-        document.getElementById('timer-ui').classList.remove('hidden');
-
-        countdownTimer = setInterval(() => {
-            timeLeft--;
-            document.getElementById('countdown-number').innerText = timeLeft;
-            
-            // Beep + Flash scurt
-            let o = audioCtx.createOscillator(); o.connect(audioCtx.destination);
-            o.frequency.value = 400; o.start(); o.stop(audioCtx.currentTime + 0.1);
-            
-            toggleFlash(true);
-            setTimeout(() => toggleFlash(false), 100);
-
-            if (timeLeft <= 0) { clearInterval(countdownTimer); triggerEmergency(); }
-        }, 1000);
-    }
-
-    function triggerEmergency() {
-        hasAlerted = true; isCountingDown = false;
-        document.getElementById('timer-ui').classList.add('hidden');
-        document.getElementById('emergency-ui').classList.remove('hidden');
-        document.getElementById('main-body').classList.add('emergency-active');
-
-        sirenInterval = setInterval(() => {
-            let o = audioCtx.createOscillator(); o.connect(audioCtx.destination);
-            o.frequency.value = (Math.floor(Date.now() / 500) % 2 === 0) ? 950 : 650;
-            o.start(); o.stop(audioCtx.currentTime + 0.4);
-            isFlashOn = !isFlashOn; toggleFlash(isFlashOn);
-        }, 500);
-
-        navigator.geolocation.getCurrentPosition((pos) => {
-            const maps = `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`;
-            document.getElementById('sms-btn').href = `sms:+40729592904?body=${encodeURIComponent("ALERTA! Andrei are o criza. Locatie: " + maps)}`;
-        });
-    }
-
-    function stopEverything() {
-        if (sirenInterval) clearInterval(sirenInterval);
-        if (countdownTimer) clearInterval(countdownTimer);
-        toggleFlash(false);
-        hasAlerted = false; isCountingDown = false;
-        document.getElementById('emergency-ui').classList.add('hidden');
-        document.getElementById('timer-ui').classList.add('hidden');
-        document.getElementById('monitor-box').classList.remove('hidden');
-        document.getElementById('main-body').classList.remove('emergency-active');
-    }
-
-    function cancelAlert() { stopEverything(); }
-</script>
-</body>
-</html>
+            <p class="text-white font-black text-3xl mb-6 animate-bounce">🚨 APELARE 112...</p>
+            <a id="sms-btn" href="#" class="block w-full py-6 bg-white text-red-600 font-black rounded-2xl text-2xl uppercase mb-4 shadow-xl">Trimite SMS de Urgență</a>
+            <button onclick="stopEverything()"
