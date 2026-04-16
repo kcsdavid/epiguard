@@ -6,84 +6,67 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <title>EpiGuard Galaxy PRO</title>
     <style>
-        /* Efect de pulsație pentru modul Alertă (Roșu) */
+        /* Modul Alertă: fundalul pulsează în roșu aprins */
         @keyframes pulse-emergency {
             0%, 100% { background-color: #000; }
-            50% { background-color: #991b1b; } /* Roșu închis intens */
+            50% { background-color: #ff0000; } 
         }
         .emergency-active { 
-            animation: pulse-emergency 0.7s infinite !important;
+            animation: pulse-emergency 0.6s infinite !important;
             background-image: none !important;
         }
-        /* Gradient Galaxie (Fundal Negru Adânc) */
+        /* Fundal Negru Galaxie cu reflexii profunde */
         .bg-galaxy {
-            background: radial-gradient(circle at 50% 10%, #1e1b4b 0%, #000000 70%, #000000 100%);
+            background: radial-gradient(circle at 50% 0%, #1e1b4b 0%, #000000 85%);
             background-color: #000;
-        }
-        /* Gradient Text Animat (Albastru-Mov) */
-        @keyframes gradient-x {
-            0%, 100% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-        }
-        .animate-gradient-x {
-            background-size: 200% auto;
-            animation: gradient-x 3s linear infinite;
         }
     </style>
 </head>
-<body id="main-body" class="bg-galaxy text-white font-sans overflow-hidden transition-all duration-700">
+<body id="main-body" class="bg-galaxy text-white font-sans min-h-screen overflow-hidden transition-all duration-700">
 
-    <div class="fixed inset-0 opacity-20 pointer-events-none" id="stars-overlay">
-        <div class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')]"></div>
-    </div>
-
-    <div class="relative z-10 flex flex-col h-screen p-6">
+    <div class="relative z-10 flex flex-col items-center h-screen p-6 overflow-y-auto">
         
-        <header class="flex flex-col items-center mt-6 mb-8 text-center">
-            <div class="relative group">
-                <div id="logo-glow" class="absolute inset-0 bg-blue-600 blur-[50px] opacity-50 animate-pulse"></div>
-                <img src="logo.jpeg" alt="Logo EpiGuard" class="relative w-36 h-36 object-contain rounded-full border-4 border-blue-500/40 shadow-[0_0_50px_rgba(59,130,246,0.6)]">
+        <header class="flex flex-col items-center mt-2 mb-6 text-center">
+            <div class="relative">
+                <div id="logo-glow" class="absolute inset-0 bg-blue-600 blur-[80px] opacity-50 animate-pulse"></div>
+                <img src="logo.jpeg" alt="Logo EpiGuard" class="relative w-56 h-56 object-contain rounded-full border-2 border-white/10 shadow-2xl">
             </div>
             
-            <h1 id="title-text" class="text-3xl font-black mt-5 tracking-[0.25em] text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-500 to-blue-400 animate-gradient-x uppercase drop-shadow-[0_0_10px_rgba(168,85,247,0.5)]">
-                EPIGUARD PRO
+            <h1 id="title-text" class="text-5xl font-black mt-4 tracking-tight drop-shadow-2xl">
+                <span class="text-blue-500">Epi</span><span class="text-purple-500">Guard</span>
             </h1>
 
-            <img src="medalert.jpeg" alt="Concept by MedAlert" class="w-32 h-auto mt-2 opacity-70 hover:opacity-100 transition-opacity">
+            <img src="med.jpeg" alt="Concept by MedAlert" class="w-52 h-auto mt-4 opacity-95 rounded-xl shadow-lg">
         </header>
 
-        <div class="bg-black/50 backdrop-blur-2xl border border-white/10 rounded-[2.5rem] p-7 mb-5 shadow-[0_0_30px_rgba(30,27,75,0.5)] text-center" onclick="forceTrigger()">
-             <p class="text-purple-400 text-[10px] font-bold uppercase tracking-widest mb-1">Intensitate G-Force</p>
-             <div id="accel-val" class="text-7xl font-black text-white tracking-tighter drop-shadow-[0_0_20px_rgba(59,130,246,0.9)]">0.00</div>
-             <div class="w-full bg-gray-900 h-2 rounded-full mt-5 overflow-hidden border border-white/5">
+        <div class="w-full bg-black/70 backdrop-blur-2xl border border-white/10 rounded-[3rem] p-8 mb-4 shadow-2xl text-center" onclick="forceTrigger()">
+             <p class="text-purple-400 text-xs font-bold uppercase tracking-[0.3em] mb-1">Monitorizare G-Force</p>
+             <div id="accel-val" class="text-7xl font-black text-white drop-shadow-[0_0_25px_rgba(59,130,246,0.8)]">0.00</div>
+             <div class="w-full bg-gray-900 h-2.5 rounded-full mt-5 overflow-hidden">
                 <div id="accel-bar" class="bg-gradient-to-r from-blue-500 to-purple-600 h-full transition-all duration-100" style="width: 0%"></div>
              </div>
         </div>
 
-        <div class="grid grid-cols-1 gap-3 mb-5">
-            <div class="bg-white/5 border border-blue-500/20 rounded-2xl p-4 flex justify-between items-center">
-                <div>
-                    <p class="text-blue-400 text-[10px] font-bold uppercase tracking-widest">Utilizator</p>
-                    <p class="text-lg font-medium text-blue-50">Andrei <span class="text-purple-400 font-bold">Popescu</span></p>
-                </div>
-                <div class="h-10 w-10 rounded-full bg-blue-950 border border-blue-500/50 flex items-center justify-center text-blue-400 font-bold text-lg">A</div>
+        <div class="w-full grid grid-cols-1 gap-3 mb-4">
+            <div class="bg-white/5 border border-blue-500/30 rounded-2xl p-5">
+                <p class="text-blue-400 text-[10px] font-bold uppercase tracking-widest">Utilizator</p>
+                <p class="text-xl font-medium">Andrei <span class="text-purple-500 font-black">Popescu</span></p>
             </div>
-            <div id="allergy-box" class="bg-white/5 border border-purple-500/20 rounded-2xl p-4 border-l-4 border-l-red-600">
+            <div class="bg-white/5 border border-purple-500/30 rounded-2xl p-5 border-l-8 border-l-red-600 shadow-lg">
                 <p class="text-purple-400 text-[10px] font-bold uppercase tracking-widest">Alergii Critice</p>
-                <p class="text-md font-medium text-purple-100"><span class="text-red-400">Penicilină, Polen</span></p>
+                <p class="text-lg text-red-500 font-black uppercase italic">Penicilină, Polen</p>
             </div>
         </div>
 
-        <div id="emergency-ui" class="hidden text-center p-7 bg-red-600 rounded-[2rem] border-4 border-white mb-6 animate-bounce shadow-[0_0_60px_rgba(239,68,68,0.8)]">
-            <p class="text-white font-black text-3xl mb-2 tracking-tighter">🚨 INIȚIALIZARE 112</p>
-            <p class="text-white text-xs mb-5 font-bold uppercase tracking-wider">Protocol activat. Locația GPS trimisă.</p>
-            <a id="sms-btn" href="#" class="block w-full py-5 bg-white text-red-600 font-black rounded-xl text-xl shadow-2xl active:scale-95 transition-transform uppercase">
+        <div id="emergency-ui" class="hidden w-full text-center p-8 bg-red-600 rounded-[2.5rem] border-4 border-white mb-6 animate-bounce shadow-[0_0_50px_rgba(255,0,0,0.7)]">
+            <p class="text-white font-black text-3xl mb-4">🚨 URGENȚĂ! 112</p>
+            <a id="sms-btn" href="#" class="block w-full py-5 bg-white text-red-600 font-black rounded-2xl text-xl uppercase shadow-2xl active:scale-90 transition-transform">
                 Trimite SMS Acum
             </a>
         </div>
 
-        <button id="main-btn" onclick="startSystem()" class="mt-auto mb-10 w-full py-5 bg-gradient-to-r from-blue-700 via-purple-700 to-blue-700 rounded-2xl font-black text-xl tracking-widest shadow-lg active:scale-95 transition-all uppercase border border-white/10">
-            Activare Protecție
+        <button id="main-btn" onclick="startSystem()" class="mt-auto mb-10 w-full py-6 bg-gradient-to-r from-blue-700 to-purple-700 rounded-3xl font-black text-2xl tracking-widest uppercase border border-white/20 shadow-2xl active:scale-95 transition-all">
+            Activare
         </button>
     </div>
 
@@ -103,11 +86,9 @@
 
     function activate() {
         isActive = true;
-        document.getElementById('main-btn').innerText = "SISTEM ACTIV";
-        document.getElementById('main-btn').classList.replace('from-blue-700', 'from-gray-800');
-        document.getElementById('main-btn').classList.remove('via-purple-700', 'to-blue-700');
-        document.getElementById('main-btn').classList.add('to-gray-900');
-        document.getElementById('logo-glow').classList.replace('bg-blue-600', 'bg-blue-400');
+        const btn = document.getElementById('main-btn');
+        btn.innerText = "SISTEM ACTIV";
+        btn.className = "mt-auto mb-10 w-full py-6 bg-black border-2 border-blue-500/50 rounded-3xl font-black text-2xl text-blue-400 uppercase shadow-[inset_0_0_20px_rgba(59,130,246,0.3)]";
         
         window.addEventListener('devicemotion', (e) => {
             if (hasAlerted || !isActive) return;
@@ -115,10 +96,7 @@
             if (!a || a.x === null) return;
             let total = Math.sqrt(a.x**2 + a.y**2 + a.z**2);
             document.getElementById('accel-val').innerText = total.toFixed(2);
-            
-            let barWidth = Math.min((total / 45) * 100, 100);
-            document.getElementById('accel-bar').style.width = barWidth + "%";
-
+            document.getElementById('accel-bar').style.width = Math.min((total / 45) * 100, 100) + "%";
             if (total > 45) trigger(); 
         });
     }
@@ -126,42 +104,33 @@
     function trigger() {
         if (hasAlerted) return;
         hasAlerted = true;
-
-        // ACTIVARE MOD ROȘU (Alertă)
+        
         document.getElementById('main-body').classList.add('emergency-active');
         document.getElementById('emergency-ui').classList.remove('hidden');
-        document.getElementById('stars-overlay').classList.add('hidden');
+        document.getElementById('title-text').innerHTML = "<span class='text-white'>ALERTA!</span>";
         
-        // Transformare text titlu în alb fix
-        document.getElementById('title-text').classList.remove('text-transparent', 'bg-clip-text', 'animate-gradient-x');
-        document.getElementById('title-text').classList.add('text-white');
-        document.getElementById('title-text').innerText = "URGENȚĂ CRITICĂ";
-        
-        // Sirenă
+        // Sirenă audio
         setInterval(() => {
             let o = audioCtx.createOscillator();
             let g = audioCtx.createGain();
             o.connect(g); g.connect(audioCtx.destination);
-            o.frequency.setValueAtTime(800, audioCtx.currentTime);
-            o.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.3);
-            g.gain.value = 0.1;
-            o.start(); o.stop(audioCtx.currentTime + 0.4);
+            o.frequency.value = 1000; g.gain.value = 0.2;
+            o.start(); o.stop(audioCtx.currentTime + 0.3);
         }, 500);
 
-        const btn = document.getElementById('sms-btn');
+        const smsBtn = document.getElementById('sms-btn');
         const nr = "+40729592904"; 
-        let msg = "ALERTA CRITICA EPIGUARD! Andrei a suferit o criza. Necesita ajutor urgent!";
-        
         navigator.geolocation.getCurrentPosition((pos) => {
-            let maps = `https://maps.google.com/?q=${pos.coords.latitude},${pos.coords.longitude}`;
-            btn.href = `sms:${nr}?body=${encodeURIComponent(msg + " Locatie GPS: " + maps)}`;
-        }, null, {enableHighAccuracy: true});
+            let maps = `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`;
+            smsBtn.href = `sms:${nr}?body=${encodeURIComponent("ALERTA EPIGUARD! Andrei a suferit o criza medicala. Locatie GPS: " + maps)}`;
+        });
     }
 
     function forceTrigger() {
-        if (!isActive) return;
-        clickCount++;
-        if (clickCount >= 3) trigger();
+        if (isActive) {
+            clickCount++;
+            if (clickCount >= 3) trigger();
+        }
     }
 </script>
 </body>
