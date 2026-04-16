@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <script src="https://cdn.tailwindcss.com"></script>
-    <title>EpiGuard Galaxy Safe</title>
+    <title>EpiGuard Galaxy PRO</title>
     <style>
         @keyframes pulse-red {
             0%, 100% { background-color: #000; }
@@ -34,7 +34,7 @@
             <img src="med.jpeg" alt="MedAlert" class="w-48 h-auto opacity-80 rounded-lg">
         </header>
 
-        <div id="monitor-box" class="w-full max-w-md bg-black/60 backdrop-blur-xl border border-white/10 rounded-[2.5rem] p-8 mb-6 text-center shadow-2xl">
+        <div id="monitor-box" class="w-full max-w-md bg-black/60 backdrop-blur-xl border border-white/10 rounded-[2.5rem] p-8 mb-6 text-center shadow-2xl" onclick="forceTrigger()">
              <p class="text-purple-400 text-[10px] font-bold uppercase tracking-[0.2em] mb-2">Senzor G-Force</p>
              <div id="accel-val" class="text-7xl font-black text-white drop-shadow-[0_0_20px_rgba(59,130,246,0.6)]">0.00</div>
              <div class="w-full bg-gray-900 h-3 rounded-full mt-6 overflow-hidden">
@@ -47,10 +47,12 @@
                 <p class="text-blue-400 text-[10px] font-bold uppercase tracking-widest">Utilizator</p>
                 <p class="text-xl font-medium">Andrei <span class="text-purple-500 font-black">Popescu</span></p>
             </div>
-            <div class="bg-blue-900/30 border border-blue-400/40 rounded-2xl p-5">
-                <p class="text-blue-300 text-[10px] font-bold uppercase tracking-widest">Afecțiune Monitorizată</p>
-                <p class="text-2xl font-black text-white italic">EPILEPSIE</p>
+            
+            <div class="bg-blue-900/40 border border-blue-400/50 rounded-2xl p-5 shadow-[0_0_15px_rgba(59,130,246,0.2)]">
+                <p class="text-blue-300 text-[10px] font-bold uppercase tracking-widest">Diagnostic Principal</p>
+                <p class="text-2xl font-black text-white italic tracking-tighter uppercase">EPILEPSIE</p>
             </div>
+
             <div class="bg-white/5 border border-purple-500/20 border-l-8 border-l-red-600 rounded-2xl p-5">
                 <p class="text-purple-400 text-[10px] font-bold uppercase tracking-widest">Alergii Critice</p>
                 <p class="text-lg text-red-500 font-black uppercase italic">Penicilină, Polen</p>
@@ -60,14 +62,14 @@
         <div id="timer-ui" class="hidden w-full max-w-md text-center p-8 bg-yellow-600 rounded-[2.5rem] border-4 border-white mb-6 animate-pulse shadow-2xl">
             <p class="text-white font-black text-xl mb-2 italic uppercase">Impact Detectat!</p>
             <p class="text-white text-7xl font-black mb-6" id="countdown-number">5</p>
-            <button onclick="cancelAlert()" class="w-full py-5 bg-black text-white font-black rounded-2xl text-xl uppercase border-2 border-white active:scale-95 transition-transform">
-                Sunt bine (Anulează)
+            <button onclick="cancelAlert()" class="w-full py-5 bg-black text-white font-black rounded-2xl text-xl uppercase border-2 border-white">
+                SUNT BINE (ANULEAZĂ)
             </button>
         </div>
 
         <div id="emergency-ui" class="hidden w-full max-w-md text-center p-8 bg-red-600 rounded-[2.5rem] border-4 border-white mb-8 shadow-2xl">
             <p class="text-white font-black text-2xl mb-6 animate-bounce">🚨 INIȚIALIZARE APEL 112</p>
-            <a id="sms-btn" href="#" class="block w-full py-6 bg-white text-red-600 font-black rounded-2xl text-2xl shadow-2xl uppercase active:scale-90 transition-transform">
+            <a id="sms-btn" href="#" class="block w-full py-6 bg-white text-red-600 font-black rounded-2xl text-2xl shadow-2xl uppercase">
                 Trimite SMS
             </a>
         </div>
@@ -84,6 +86,7 @@
     let countdownTimer = null;
     let audioCtx = null;
     let timeLeft = 5;
+    let clickCount = 0;
 
     function startSystem() {
         if (isActive) return;
@@ -96,7 +99,7 @@
     function activate() {
         isActive = true;
         document.getElementById('main-btn').innerText = "SISTEM ACTIV";
-        document.getElementById('main-btn').className = "mt-auto mb-6 w-full max-w-md py-6 bg-black border-2 border-blue-500/40 rounded-3xl font-black text-2xl text-blue-400 uppercase shadow-inner";
+        document.getElementById('main-btn').className = "mt-auto mb-6 w-full max-w-md py-6 bg-black border-2 border-blue-500/40 rounded-3xl font-black text-2xl text-blue-400 uppercase";
         
         window.addEventListener('devicemotion', (e) => {
             if (hasAlerted || !isActive || isCountingDown) return;
@@ -108,6 +111,18 @@
             
             if (total > 45) startCountdown(); 
         });
+    }
+
+    // FUNCTIA PENTRU ACTIVARE LA 3 CLICKURI
+    function forceTrigger() {
+        if (!isActive) return;
+        clickCount++;
+        if (clickCount >= 3) {
+            clickCount = 0;
+            startCountdown();
+        }
+        // Resetare contor dupa 2 secunde daca nu se dau toate clickurile
+        setTimeout(() => { clickCount = 0; }, 2000);
     }
 
     function startCountdown() {
@@ -151,26 +166,4 @@
         document.getElementById('timer-ui').classList.add('hidden');
         document.getElementById('emergency-ui').classList.remove('hidden');
         document.getElementById('main-body').classList.add('emergency-active');
-        document.getElementById('header-section').classList.remove('opacity-10');
-        document.getElementById('title-text').innerHTML = "<span class='text-white font-black'>ALERTĂ!</span>";
-        
-        setInterval(() => {
-            let o = audioCtx.createOscillator();
-            let g = audioCtx.createGain();
-            o.connect(g); g.connect(audioCtx.destination);
-            o.frequency.setValueAtTime(800, audioCtx.currentTime);
-            o.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.4);
-            g.gain.value = 0.15;
-            o.start(); o.stop(audioCtx.currentTime + 0.4);
-        }, 600);
-
-        const smsBtn = document.getElementById('sms-btn');
-        const nr = "+40729592904"; 
-        navigator.geolocation.getCurrentPosition((pos) => {
-            let maps = `http://googleusercontent.com/maps.google.com/?q=${pos.coords.latitude},${pos.coords.longitude}`;
-            smsBtn.href = `sms:${nr}?body=${encodeURIComponent("ALERTA EPIGUARD! Andrei are o criza de EPILEPSIE. Locatie: " + maps)}`;
-        });
-    }
-</script>
-</body>
-</html>
+        document.getElementById('header-section').classList.remove
