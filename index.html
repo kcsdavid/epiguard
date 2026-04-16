@@ -38,7 +38,6 @@
              <div class="w-full bg-gray-900 h-3 rounded-full mt-6 overflow-hidden">
                 <div id="accel-bar" class="bg-gradient-to-r from-blue-500 to-purple-600 h-full transition-all duration-150" style="width: 0%"></div>
              </div>
-             <p class="text-[8px] text-white/30 mt-2 uppercase">Apasă de 3 ori pentru test manual</p>
         </div>
 
         <div id="patient-info" class="w-full max-w-md space-y-3 mb-8">
@@ -69,8 +68,8 @@
             <a id="sms-btn" href="#" class="block w-full py-6 bg-white text-red-600 font-black rounded-2xl text-2xl shadow-2xl uppercase mb-4">
                 Trimite SMS
             </a>
-            <button onclick="stopEverything()" class="w-full py-3 bg-black/40 text-white font-bold rounded-xl text-sm uppercase border border-white/20">
-                OPRIRE SISTEM / RESET
+            <button onclick="stopEverything()" class="w-full py-4 bg-black/60 text-white font-black rounded-2xl text-lg uppercase border-2 border-white/40">
+                OPRIRE / RESET
             </button>
         </div>
 
@@ -89,140 +88,9 @@
     let clickCount = 0;
     let sirenInterval = null;
 
-    // FIX ACTIVARE IPHONE
     async function requestPermissions() {
         if (isActive) return;
-        
-        // Initializare Audio
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         
-        // Cerere senzori
         if (typeof DeviceMotionEvent.requestPermission === 'function') {
             try {
-                const permissionState = await DeviceMotionEvent.requestPermission();
-                if (permissionState === 'granted') {
-                    activateSystem();
-                } else {
-                    alert("Permisiunea senzorilor a fost refuzată.");
-                }
-            } catch (e) {
-                console.error(e);
-            }
-        } else {
-            activateSystem();
-        }
-    }
-
-    function activateSystem() {
-        isActive = true;
-        const btn = document.getElementById('main-btn');
-        btn.innerText = "SISTEM ACTIV";
-        btn.className = "mt-auto mb-6 w-full max-w-md py-6 bg-black border-2 border-blue-500/40 rounded-3xl font-black text-2xl text-blue-400 uppercase";
-        
-        window.addEventListener('devicemotion', (e) => {
-            if (hasAlerted || !isActive || isCountingDown) return;
-            let a = e.acceleration;
-            if (!a || a.x === null) return;
-            let total = Math.sqrt(a.x**2 + a.y**2 + a.z**2);
-            document.getElementById('accel-val').innerText = total.toFixed(2);
-            document.getElementById('accel-bar').style.width = Math.min((total / 45) * 100, 100) + "%";
-            
-            if (total > 45) startCountdown(); 
-        });
-    }
-
-    function forceTrigger() {
-        if (!isActive) return;
-        clickCount++;
-        if (clickCount >= 3) {
-            clickCount = 0;
-            startCountdown();
-        }
-        setTimeout(() => { clickCount = 0; }, 2000);
-    }
-
-    function playCountdownBeep() {
-        let o = audioCtx.createOscillator();
-        let g = audioCtx.createGain();
-        o.connect(g); g.connect(audioCtx.destination);
-        o.frequency.value = 440; // Sunet grav, tip avertizare
-        g.gain.value = 0.1;
-        o.start(); o.stop(audioCtx.currentTime + 0.15);
-    }
-
-    function startCountdown() {
-        if(isCountingDown) return;
-        isCountingDown = true;
-        timeLeft = 5;
-        document.getElementById('monitor-box').classList.add('hidden');
-        document.getElementById('patient-info').classList.add('hidden');
-        document.getElementById('header-section').classList.add('opacity-10');
-        document.getElementById('timer-ui').classList.remove('hidden');
-        document.getElementById('countdown-number').innerText = timeLeft;
-
-        countdownTimer = setInterval(() => {
-            timeLeft--;
-            document.getElementById('countdown-number').innerText = timeLeft;
-            playCountdownBeep();
-
-            if (timeLeft <= 0) {
-                clearInterval(countdownTimer);
-                triggerEmergency();
-            }
-        }, 1000);
-    }
-
-    function triggerEmergency() {
-        hasAlerted = true;
-        isCountingDown = false;
-        document.getElementById('timer-ui').classList.add('hidden');
-        document.getElementById('emergency-ui').classList.remove('hidden');
-        document.getElementById('main-body').classList.add('emergency-active');
-        document.getElementById('header-section').classList.remove('opacity-10');
-        document.getElementById('title-text').innerHTML = "<span class='text-white font-black'>ALERTĂ!</span>";
-        
-        // SIRENA DE URGENTA (Alta decat la countdown)
-        sirenInterval = setInterval(() => {
-            let o = audioCtx.createOscillator();
-            let g = audioCtx.createGain();
-            o.connect(g); g.connect(audioCtx.destination);
-            // Efect de sirena (Wail)
-            o.frequency.setValueAtTime(600, audioCtx.currentTime);
-            o.frequency.exponentialRampToValueAtTime(1400, audioCtx.currentTime + 0.5);
-            g.gain.value = 0.15;
-            o.start(); o.stop(audioCtx.currentTime + 0.5);
-        }, 600);
-
-        // SMS Logic
-        const nr = "+40729592904"; 
-        navigator.geolocation.getCurrentPosition((pos) => {
-            let maps = `https://maps.google.com/?q=${pos.coords.latitude},${pos.coords.longitude}`;
-            document.getElementById('sms-btn').href = `sms:${nr}?body=${encodeURIComponent("ALERTA EPIGUARD! Andrei a suferit un impact. EPILEPSIE. Locatie: " + maps)}`;
-        });
-    }
-
-    function cancelAlert() {
-        clearInterval(countdownTimer);
-        isCountingDown = false;
-        document.getElementById('timer-ui').classList.add('hidden');
-        document.getElementById('monitor-box').classList.remove('hidden');
-        document.getElementById('patient-info').classList.remove('hidden');
-        document.getElementById('header-section').classList.remove('opacity-10');
-    }
-
-    function stopEverything() {
-        // Oprire sunet
-        if (sirenInterval) clearInterval(sirenInterval);
-        
-        // Resetare interfata
-        hasAlerted = false;
-        isCountingDown = false;
-        document.getElementById('emergency-ui').classList.add('hidden');
-        document.getElementById('main-body').classList.remove('emergency-active');
-        document.getElementById('monitor-box').classList.remove('hidden');
-        document.getElementById('patient-info').classList.remove('hidden');
-        document.getElementById('title-text').innerHTML = '<span class="text-blue-500">Epi</span><span class="text-purple-500">Guard</span>';
-    }
-</script>
-</body>
-</html>
