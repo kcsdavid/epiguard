@@ -3,8 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="EpiGuard">
+    <link rel="apple-touch-icon" href="logo.jpeg">
+
     <script src="https://cdn.tailwindcss.com"></script>
-    <title>EpiGuard PRO v7.1</title>
+    <title>EpiGuard PRO v7.1 PWA</title>
+    
     <style>
         @keyframes pulse-red { 0%, 100% { background-color: #000; } 50% { background-color: #dc2626; } }
         .emergency-active { animation: pulse-red 0.5s infinite !important; }
@@ -12,6 +20,17 @@
         @keyframes blink-red { 0%, 100% { color: white; } 50% { color: #ef4444; } }
         .blink-med { animation: blink-red 1s infinite; }
     </style>
+
+    <script>
+        // Înregistrare Service Worker pentru PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('service-worker.js')
+                    .then(reg => console.log('Service Worker înregistrat'))
+                    .catch(err => console.log('Eroare SW:', err));
+            });
+        }
+    </script>
 </head>
 <body id="main-body" class="bg-galaxy text-white font-sans min-h-screen transition-all duration-500 overflow-x-hidden">
 
@@ -85,22 +104,19 @@
         setStatus("Se solicită permisiuni...");
         
         try {
-            // Inițializare Audio
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             
-            // Permisiune Mișcare (iPhone)
             if (typeof DeviceMotionEvent.requestPermission === 'function') {
                 const res = await DeviceMotionEvent.requestPermission();
                 if (res !== 'granted') throw new Error("Permisiune Senzori Refuzată");
             }
             
-            // Permisiune Cameră (Flash)
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
                 videoTrack = stream.getVideoTracks()[0];
                 setStatus("Activ (Senzori + Flash)");
             } catch (e) {
-                setStatus("Activ (Doar Senzori - Fără Flash)");
+                setStatus("Activ (Fără Flash)");
             }
             
             isActive = true;
@@ -111,7 +127,7 @@
             initMotion();
         } catch (err) {
             setStatus("Eroare: " + err.message);
-            alert("Atenție: Site-ul trebuie deschis cu HTTPS pentru a funcționa!");
+            alert("Atenție: Site-ul trebuie deschis cu HTTPS!");
         }
     }
 
@@ -143,49 +159,4 @@
 
         countdownTimer = setInterval(() => {
             timeLeft--;
-            document.getElementById('countdown-number').innerText = timeLeft;
-            
-            // Beep + Flash
-            let o = audioCtx.createOscillator(); o.connect(audioCtx.destination);
-            o.frequency.value = 400; o.start(); o.stop(audioCtx.currentTime + 0.1);
-            toggleFlash(true); setTimeout(() => toggleFlash(false), 150);
-
-            if (timeLeft <= 0) { clearInterval(countdownTimer); triggerEmergency(); }
-        }, 1000);
-    }
-
-    function triggerEmergency() {
-        hasAlerted = true; isCountingDown = false;
-        document.getElementById('timer-ui').classList.add('hidden');
-        document.getElementById('emergency-ui').classList.remove('hidden');
-        document.getElementById('main-body').classList.add('emergency-active');
-
-        sirenInterval = setInterval(() => {
-            let o = audioCtx.createOscillator(); o.connect(audioCtx.destination);
-            o.frequency.value = (Math.floor(Date.now() / 500) % 2 === 0) ? 950 : 650;
-            o.start(); o.stop(audioCtx.currentTime + 0.4);
-            isFlashOn = !isFlashOn; toggleFlash(isFlashOn);
-        }, 500);
-
-        navigator.geolocation.getCurrentPosition((pos) => {
-            const maps = `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`;
-            document.getElementById('sms-btn').href = `sms:+40729592904?body=${encodeURIComponent("URGENTA! Andrei Popescu (Epilepsie, A II+, Alergie Penicilina) are o criza. Locatie: " + maps)}`;
-        });
-    }
-
-    function stopEverything() {
-        if (sirenInterval) clearInterval(sirenInterval);
-        if (countdownTimer) clearInterval(countdownTimer);
-        toggleFlash(false);
-        hasAlerted = false; isCountingDown = false;
-        document.getElementById('emergency-ui').classList.add('hidden');
-        document.getElementById('timer-ui').classList.add('hidden');
-        document.getElementById('monitor-box').classList.remove('hidden');
-        document.getElementById('patient-info').classList.remove('hidden');
-        document.getElementById('main-body').classList.remove('emergency-active');
-    }
-
-    function cancelAlert() { stopEverything(); }
-</script>
-</body>
-</html>
+            document.getElementById('
