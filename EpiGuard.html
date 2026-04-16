@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <title>EpiGuard Pro</title>
+    <style>
+        @keyframes pulse-red {
+            0%, 100% { background-color: rgba(220, 38, 38, 0.2); }
+            50% { background-color: rgba(220, 38, 38, 0.6); }
+        }
+        .emergency-active { animation: pulse-red 1s infinite; }
+    </style>
+</head>
+<body id="main-body" class="bg-[#0f172a] text-white font-sans overflow-hidden transition-colors duration-500">
+
+    <div class="fixed inset-0 bg-gradient-to-br from-blue-900/20 to-purple-900/20 z-0"></div>
+
+    <div class="relative z-10 flex flex-col h-screen p-6">
+        
+        <header class="flex flex-col items-center mt-4 mb-6">
+            <div class="relative">
+                <div class="absolute inset-0 bg-cyan-500 blur-2xl opacity-20 animate-pulse"></div>
+                <img src="logo_epiguard.png" alt="Logo" class="relative w-20 h-20 object-contain drop-shadow-2xl">
+            </div>
+            <h1 class="text-2xl font-extrabold mt-2 tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">
+                EPIGUARD
+            </h1>
+        </header>
+
+        <div class="bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl p-5 mb-4 shadow-2xl">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <p class="text-gray-400 text-xs uppercase tracking-wider">Status Protecție</p>
+                    <p id="status-text" class="text-xl font-bold text-gray-500">SISTEM OPRIT</p>
+                </div>
+                <div id="status-dot" class="h-3 w-3 rounded-full bg-gray-600"></div>
+            </div>
+            <div class="text-center py-2 border-t border-white/10" onclick="forceTrigger()">
+                <p class="text-gray-400 text-[10px] uppercase mb-1">Intensitate G-Force</p>
+                <div id="accel-val" class="text-5xl font-black text-white tracking-tighter">0.00</div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 gap-3 mb-4">
+            <div class="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4">
+                <p class="text-cyan-400 text-[10px] font-bold uppercase">Pacient / Diagnostic</p>
+                <p class="text-md font-medium text-white/90">Andrei Popescu - Epilepsie</p>
+            </div>
+            <div class="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 border-l-4 border-l-red-500">
+                <p class="text-red-400 text-[10px] font-bold uppercase">Alergii Critice</p>
+                <p class="text-md font-medium text-red-100">Penicilină, Polen</p>
+            </div>
+        </div>
+
+        <div id="emergency-ui" class="hidden text-center p-4 bg-red-600/30 rounded-2xl border border-red-500/50 mb-4 backdrop-blur-xl">
+            <p class="text-white font-black text-lg animate-bounce mb-1">🚨 INIȚIALIZARE APEL 112...</p>
+            <p class="text-red-200 text-[11px] mb-3">Protocol de urgență activat. Locația GPS a fost trimisă.</p>
+            <a id="sms-btn" href="#" class="inline-block w-full py-3 bg-white text-red-600 font-bold rounded-xl text-sm shadow-xl hover:bg-red-50 transition-colors">
+                TRIMITE SMS URGENȚĂ
+            </a>
+        </div>
+
+        <button id="main-btn" onclick="startSystem()" class="mt-auto mb-6 w-full py-5 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-2xl font-bold text-lg shadow-lg active:scale-95 transition-all">
+            ACTIVEAZĂ MONITORIZAREA
+        </button>
+    </div>
+
+<script>
+    let isActive = false;
+    let hasAlerted = false;
+    let audioCtx = null;
+    let clickCount = 0;
+
+    function startSystem() {
+        if (isActive) return;
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (typeof DeviceMotionEvent.requestPermission === 'function') {
+            DeviceMotionEvent.requestPermission().then(res => { if(res == 'granted') activate(); });
+        } else { activate(); }
+    }
+
+    function activate() {
+        isActive = true;
+        document.getElementById('status-text').innerText = "SISTEM ACTIV";
+        document.getElementById('status-text').classList.replace('text-gray-500', 'text-green-400');
+        document.getElementById('status-dot').classList.replace('bg-gray-600', 'bg-green-500');
+        document.getElementById('status-dot').classList.add('animate-ping');
+        document.getElementById('main-btn').innerText = "PROTECTIE ACTIVĂ";
+        document.getElementById('main-btn').classList.replace('from-cyan-600', 'from-gray-700');
+        
+        window.addEventListener('devicemotion', (e) => {
+            if (hasAlerted || !isActive) return;
+            let a = e.acceleration;
+            if (!a || a.x === null) return;
+            let total = Math.sqrt(a.x**2 + a.y**2 + a.z**2);
+            document.getElementById('accel-val').innerText = total.toFixed(2);
+            if (total > 45) trigger(); 
+        });
+
+        // Background Heartbeat
+        if (navigator.geolocation) {
+            navigator.geolocation.watchPosition(() => {}, () => {}, { enableHighAccuracy: false });
+        }
+    }
+
+    function trigger() {
+        if (hasAlerted) return;
+        hasAlerted = true;
+        document.getElementById('main-body').classList.add('emergency-active');
+        document.getElementById('emergency-ui').classList.remove('hidden');
+        
+        // Sirenă sonoră
+        setInterval(() => {
+            let o = audioCtx.createOscillator();
+            let g = audioCtx.createGain();
+            o.connect(g); g.connect(audioCtx.destination);
+            o.frequency.value = 1000; g.gain.value = 0.05;
+            o.start(); o.stop(audioCtx.currentTime + 0.3);
+        }, 600);
+
+        // SMS și GPS
+        const btn = document.getElementById('sms-btn');
+        const nr = "+40729592904";
+        let msg = "ALERTA EPIGUARD! Andrei a suferit o criza. Ajutor!";
+        btn.href = `sms:${nr}?body=${encodeURIComponent(msg)}`;
+
+        navigator.geolocation.getCurrentPosition((pos) => {
+            let maps = `https://maps.google.com/?q=${pos.coords.latitude},${pos.coords.longitude}`;
+            btn.href = `sms:${nr}?body=${encodeURIComponent(msg + " Locatie: " + maps)}`;
+            btn.innerText = "TRIMITE SMS (CU LOCAȚIE GPS)";
+        }, null, {enableHighAccuracy: true});
+    }
+
+    function forceTrigger() {
+        if (!isActive) return;
+        clickCount++;
+        if (clickCount >= 3) trigger();
+    }
+</script>
+</body>
+</html>
