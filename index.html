@@ -22,7 +22,6 @@
     </style>
 
     <script>
-        // Înregistrare Service Worker pentru PWA
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('service-worker.js')
@@ -95,39 +94,51 @@
 <script>
     let isActive = false, hasAlerted = false, isCountingDown = false;
     let countdownTimer = null, audioCtx = null, sirenInterval = null;
-    let timeLeft = 5, videoTrack = null, isFlashOn = false;
+    let timeLeft = 5, videoTrack = null, isFlashOn = false, wakeLock = null;
 
     function setStatus(msg) { document.getElementById('status-bar').innerText = "Status: " + msg; }
 
     async function startSystem() {
         if (isActive) return;
-        setStatus("Se solicită permisiuni...");
+        setStatus("Se inițializează...");
         
         try {
+            // 1. Audio Context
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            
-            if (typeof DeviceMotionEvent.requestPermission === 'function') {
-                const res = await DeviceMotionEvent.requestPermission();
-                if (res !== 'granted') throw new Error("Permisiune Senzori Refuzată");
+            if (audioCtx.state === 'suspended') { await audioCtx.resume(); }
+
+            // 2. Permisiune Mișcare
+            if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+                const permission = await DeviceMotionEvent.requestPermission();
+                if (permission !== 'granted') {
+                    throw new Error("Acces senzori refuzat.");
+                }
             }
-            
+
+            // 3. Wake Lock
+            if ('wakeLock' in navigator) {
+                try {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                } catch (err) { console.log("WakeLock nesprijinit"); }
+            }
+
+            // 4. Camera (Flash)
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
                 videoTrack = stream.getVideoTracks()[0];
-                setStatus("Activ (Senzori + Flash)");
-            } catch (e) {
-                setStatus("Activ (Fără Flash)");
-            }
+            } catch (e) { console.warn("Flash indisponibil"); }
             
             isActive = true;
             const btn = document.getElementById('main-btn');
-            btn.innerText = "SISTEM ACTIV";
-            btn.className = "mt-auto mb-4 w-full max-w-md py-6 bg-green-900 border-2 border-green-500 text-green-400 rounded-3xl font-black text-2xl uppercase";
+            btn.innerText = "SISTEM ACTIVAT";
+            btn.className = "mt-auto mb-4 w-full max-w-md py-6 bg-green-900 border-2 border-green-500 text-green-400 rounded-3xl font-black text-2xl uppercase shadow-inner";
             
             initMotion();
+            setStatus("Monitorizare ACTIVĂ 24/7");
+
         } catch (err) {
             setStatus("Eroare: " + err.message);
-            alert("Atenție: Site-ul trebuie deschis cu HTTPS!");
+            alert("Eroare la activare: " + err.message);
         }
     }
 
@@ -145,18 +156,4 @@
     }
 
     function toggleFlash(state) {
-        if (videoTrack && videoTrack.applyConstraints) {
-            videoTrack.applyConstraints({ advanced: [{ torch: state }] }).catch(() => {});
-        }
-    }
-
-    function startCountdown() {
-        if (isCountingDown) return;
-        isCountingDown = true; timeLeft = 5;
-        document.getElementById('monitor-box').classList.add('hidden');
-        document.getElementById('patient-info').classList.add('hidden');
-        document.getElementById('timer-ui').classList.remove('hidden');
-
-        countdownTimer = setInterval(() => {
-            timeLeft--;
-            document.getElementById('
+        if (videoTrack && video
