@@ -42,6 +42,17 @@
              </div>
         </div>
 
+        <div id="patient-info" class="w-full max-w-md space-y-3 mb-8">
+            <div class="bg-white/5 border border-blue-500/20 rounded-2xl p-5">
+                <p class="text-blue-400 text-[10px] font-bold uppercase tracking-widest">Utilizator</p>
+                <p class="text-xl font-medium">Andrei <span class="text-purple-500 font-black">Popescu</span></p>
+            </div>
+            <div class="bg-white/5 border border-purple-500/20 border-l-8 border-l-red-600 rounded-2xl p-5">
+                <p class="text-purple-400 text-[10px] font-bold uppercase tracking-widest">Alergii Critice</p>
+                <p class="text-lg text-red-500 font-black uppercase italic">Penicilină, Polen</p>
+            </div>
+        </div>
+
         <div id="timer-ui" class="hidden w-full max-w-md text-center p-8 bg-yellow-600 rounded-[2.5rem] border-4 border-white mb-6 animate-pulse shadow-2xl">
             <p class="text-white font-black text-xl mb-2 italic uppercase">Impact Detectat!</p>
             <p class="text-white text-7xl font-black mb-6" id="countdown-number">5</p>
@@ -81,7 +92,7 @@
     function activate() {
         isActive = true;
         document.getElementById('main-btn').innerText = "SISTEM ACTIV";
-        document.getElementById('main-btn').className = "mt-auto mb-6 w-full max-w-md py-6 bg-black border-2 border-blue-500/40 rounded-3xl font-black text-2xl text-blue-400 uppercase";
+        document.getElementById('main-btn').className = "mt-auto mb-6 w-full max-w-md py-6 bg-black border-2 border-blue-500/40 rounded-3xl font-black text-2xl text-blue-400 uppercase shadow-inner";
         
         window.addEventListener('devicemotion', (e) => {
             if (hasAlerted || !isActive || isCountingDown) return;
@@ -99,6 +110,7 @@
         isCountingDown = true;
         timeLeft = 5;
         document.getElementById('monitor-box').classList.add('hidden');
+        document.getElementById('patient-info').classList.add('hidden');
         document.getElementById('header-section').classList.add('opacity-10');
         document.getElementById('timer-ui').classList.remove('hidden');
         document.getElementById('countdown-number').innerText = timeLeft;
@@ -125,6 +137,7 @@
         isCountingDown = false;
         document.getElementById('timer-ui').classList.add('hidden');
         document.getElementById('monitor-box').classList.remove('hidden');
+        document.getElementById('patient-info').classList.remove('hidden');
         document.getElementById('header-section').classList.remove('opacity-10');
     }
 
@@ -150,8 +163,8 @@
         const smsBtn = document.getElementById('sms-btn');
         const nr = "+40729592904"; 
         navigator.geolocation.getCurrentPosition((pos) => {
-            let maps = `http://googleusercontent.com/maps.google.com/?q=${pos.coords.latitude},${pos.coords.longitude}`;
-            smsBtn.href = `sms:${nr}?body=${encodeURIComponent("ALERTA EPIGUARD! Andrei a suferit un impact. Locatie: " + maps)}`;
+            let maps = `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`;
+            smsBtn.href = `sms:${nr}?body=${encodeURIComponent("ALERTA EPIGUARD! Andrei are nevoie de ajutor. Locatie GPS: " + maps)}`;
         });
     }
 </script>
