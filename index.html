@@ -47,6 +47,10 @@
                 <p class="text-blue-400 text-[10px] font-bold uppercase tracking-widest">Utilizator</p>
                 <p class="text-xl font-medium">Andrei <span class="text-purple-500 font-black">Popescu</span></p>
             </div>
+            <div class="bg-blue-900/30 border border-blue-400/40 rounded-2xl p-5">
+                <p class="text-blue-300 text-[10px] font-bold uppercase tracking-widest">Afecțiune Monitorizată</p>
+                <p class="text-2xl font-black text-white italic">EPILEPSIE</p>
+            </div>
             <div class="bg-white/5 border border-purple-500/20 border-l-8 border-l-red-600 rounded-2xl p-5">
                 <p class="text-purple-400 text-[10px] font-bold uppercase tracking-widest">Alergii Critice</p>
                 <p class="text-lg text-red-500 font-black uppercase italic">Penicilină, Polen</p>
@@ -163,8 +167,8 @@
         const smsBtn = document.getElementById('sms-btn');
         const nr = "+40729592904"; 
         navigator.geolocation.getCurrentPosition((pos) => {
-            let maps = `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`;
-            smsBtn.href = `sms:${nr}?body=${encodeURIComponent("ALERTA EPIGUARD! Andrei are nevoie de ajutor. Locatie GPS: " + maps)}`;
+            let maps = `http://googleusercontent.com/maps.google.com/?q=${pos.coords.latitude},${pos.coords.longitude}`;
+            smsBtn.href = `sms:${nr}?body=${encodeURIComponent("ALERTA EPIGUARD! Andrei are o criza de EPILEPSIE. Locatie: " + maps)}`;
         });
     }
 </script>
