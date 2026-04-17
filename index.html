@@ -22,15 +22,18 @@
     <div class="relative z-10 flex flex-col items-center p-6 min-h-screen">
         <header class="flex flex-col items-center mt-4 mb-4 text-center w-full">
             <img src="logo.jpeg" class="w-32 h-32 object-contain rounded-full border border-white/10 mb-2 shadow-2xl">
-            <h1 class="text-4xl font-black"><span class="text-blue-500">Epi</span><span class="text-purple-500">Guard</span></h1>
+            <h1 class="text-4xl font-black mb-4"><span class="text-blue-500">Epi</span><span class="text-purple-500">Guard</span></h1>
+            
+            <img src="med.jpeg" class="w-full max-w-sm h-auto rounded-3xl border-2 border-white/20 shadow-2xl mb-6 object-cover">
         </header>
 
-        <div id="monitor-box" class="w-full max-w-md bg-black/40 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 mb-4 text-center shadow-2xl">
+        <div id="monitor-box" onclick="handleManualTrigger()" class="w-full max-w-md bg-black/40 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 mb-4 text-center shadow-2xl active:scale-95 transition-transform">
              <p class="text-blue-400 text-[10px] font-bold uppercase tracking-widest mb-1">G-Force Monitor</p>
              <div id="accel-val" class="text-6xl font-black text-white">0.00</div>
              <div class="w-full bg-gray-900 h-2 rounded-full mt-4 overflow-hidden">
                 <div id="accel-bar" class="bg-blue-500 h-full transition-all duration-150" style="width: 0%"></div>
              </div>
+             <p class="text-[8px] text-gray-500 mt-2 uppercase tracking-tighter">Apasă de 3 ori rapid pentru alarmă manuală</p>
         </div>
 
         <div id="patient-info" class="w-full max-w-md space-y-2 mb-6">
@@ -77,60 +80,54 @@
 <script>
     let isActive = false, hasAlerted = false, isCountingDown = false;
     let countdownTimer = null, audioCtx = null, videoTrack = null, isFlashOn = false;
+    let clickCount = 0, lastClickTime = 0;
 
     function setStatus(msg) { document.getElementById('status-bar').innerText = "Status: " + msg; }
+
+    // Funcția pentru cele 3 click-uri
+    function handleManualTrigger() {
+        if (!isActive || isCountingDown || hasAlerted) return;
+        const now = Date.now();
+        if (now - lastClickTime < 500) { clickCount++; } else { clickCount = 1; }
+        lastClickTime = now;
+        if (clickCount >= 3) { clickCount = 0; startCountdown(); }
+    }
 
     async function startSystem() {
         setStatus("Se solicită permisiuni...");
         try {
             if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
                 const response = await DeviceMotionEvent.requestPermission();
-                if (response !== 'granted') {
-                    alert("Eroare: Trebuie să permiți accesul la senzori.");
-                    return;
-                }
+                if (response !== 'granted') { alert("Permite accesul la senzori!"); return; }
             }
-            
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             if (audioCtx.state === 'suspended') await audioCtx.resume();
-
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
                 videoTrack = stream.getVideoTracks()[0];
             } catch (err) { console.log("Bliț indisponibil."); }
-
-            if ('wakeLock' in navigator) {
-                try { await navigator.wakeLock.request('screen'); } catch (e) {}
-            }
+            if ('wakeLock' in navigator) { try { await navigator.wakeLock.request('screen'); } catch (e) {} }
 
             isActive = true;
             document.getElementById('main-btn').innerText = "SISTEM ACTIVAT ✔";
             document.getElementById('main-btn').className = "mt-auto mb-4 w-full max-w-md py-6 bg-green-700 text-white rounded-3xl font-black text-2xl uppercase border-2 border-green-400";
-            
             window.addEventListener('devicemotion', handleMotion);
             setStatus("Monitorizare ACTIVĂ");
-
-        } catch (e) {
-            alert("Eroare: " + e.message);
-        }
+        } catch (e) { alert("Eroare: " + e.message); }
     }
 
     function handleMotion(e) {
         if (!isActive || hasAlerted || isCountingDown) return;
         let acc = e.acceleration;
         if (!acc || acc.x === null) return;
-        
         let force = Math.sqrt(acc.x**2 + acc.y**2 + acc.z**2);
         document.getElementById('accel-val').innerText = force.toFixed(2);
         document.getElementById('accel-bar').style.width = Math.min((force / 45) * 100, 100) + "%";
-
         if (force > 45) startCountdown();
     }
 
     function toggleFlash(state) {
-        if (videoTrack) {
-            videoTrack.applyConstraints({ advanced: [{ torch: state }] }).catch(() => {});
-        }
+        if (videoTrack) { videoTrack.applyConstraints({ advanced: [{ torch: state }] }).catch(() => {}); }
     }
 
     function startCountdown() {
@@ -142,17 +139,11 @@
         countdownTimer = setInterval(() => {
             count--;
             document.getElementById('countdown-number').innerText = count;
-            
-            // Beep + Flash scurt la fiecare secundă de numărătoare
             if(audioCtx) {
                 let o = audioCtx.createOscillator(); o.connect(audioCtx.destination);
                 o.frequency.value = 400; o.start(); o.stop(audioCtx.currentTime + 0.1);
             }
-            
-            // Efect vizual bliț în cele 5 secunde
-            toggleFlash(true);
-            setTimeout(() => toggleFlash(false), 200);
-
+            toggleFlash(true); setTimeout(() => toggleFlash(false), 200);
             if (count <= 0) { clearInterval(countdownTimer); triggerEmergency(); }
         }, 1000);
     }
@@ -162,23 +153,17 @@
         document.getElementById('timer-ui').classList.add('hidden');
         document.getElementById('emergency-ui').classList.remove('hidden');
         document.getElementById('main-body').classList.add('emergency-active');
-
-        // Sirenă și Bliț continuu
         setInterval(() => {
             if(audioCtx) {
                 let o = audioCtx.createOscillator(); o.connect(audioCtx.destination);
                 o.frequency.value = (Math.floor(Date.now() / 500) % 2 === 0) ? 950 : 650;
                 o.start(); o.stop(audioCtx.currentTime + 0.4);
             }
-            isFlashOn = !isFlashOn;
-            toggleFlash(isFlashOn);
+            isFlashOn = !isFlashOn; toggleFlash(isFlashOn);
         }, 500);
-
         navigator.geolocation.getCurrentPosition((pos) => {
-            const loc = `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`;
-            document.getElementById('sms-btn').href = `sms:+40729592904?body=URGENTA! Andrei Popescu (Epilepsie, A II+, Alergie Penicilina) are o criza. Locatie: ${loc}`;
-        }, () => {
-            document.getElementById('sms-btn').href = `sms:+40729592904?body=URGENTA! Andrei Popescu are o criza. Locatie indisponibila.`;
+            const loc = `http://maps.google.com/?q=${pos.coords.latitude},${pos.coords.longitude}`;
+            document.getElementById('sms-btn').href = `sms:+40729592904?body=URGENTA! Andrei Popescu (Epilepsie) are o criza. Locatie: ${loc}`;
         });
     }
 </script>
