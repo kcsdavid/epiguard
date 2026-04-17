@@ -81,10 +81,10 @@
     let isActive = false, hasAlerted = false, isCountingDown = false;
     let countdownTimer = null, audioCtx = null, videoTrack = null, isFlashOn = false;
     let clickCount = 0, lastClickTime = 0;
+    let wakeLock = null;
 
     function setStatus(msg) { document.getElementById('status-bar').innerText = "Status: " + msg; }
 
-    // Funcția pentru cele 3 click-uri
     function handleManualTrigger() {
         if (!isActive || isCountingDown || hasAlerted) return;
         const now = Date.now();
@@ -93,28 +93,52 @@
         if (clickCount >= 3) { clickCount = 0; startCountdown(); }
     }
 
+    // Păcălește sistemul să creadă că redăm muzică pentru a nu închide procesul în fundal
+    function keepAliveAudio() {
+        if (!audioCtx) return;
+        const buffer = audioCtx.createBuffer(1, 1, 22050);
+        const source = audioCtx.createBufferSource();
+        source.buffer = buffer;
+        source.connect(audioCtx.destination);
+        source.loop = true;
+        source.start();
+    }
+
     async function startSystem() {
-        setStatus("Se solicită permisiuni...");
+        setStatus("Se activează protecția...");
         try {
             if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
                 const response = await DeviceMotionEvent.requestPermission();
                 if (response !== 'granted') { alert("Permite accesul la senzori!"); return; }
             }
+            
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             if (audioCtx.state === 'suspended') await audioCtx.resume();
+            keepAliveAudio(); 
+
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
                 videoTrack = stream.getVideoTracks()[0];
             } catch (err) { console.log("Bliț indisponibil."); }
-            if ('wakeLock' in navigator) { try { await navigator.wakeLock.request('screen'); } catch (e) {} }
+
+            if ('wakeLock' in navigator) {
+                try { wakeLock = await navigator.wakeLock.request('screen'); } catch (e) {}
+            }
 
             isActive = true;
             document.getElementById('main-btn').innerText = "SISTEM ACTIVAT ✔";
             document.getElementById('main-btn').className = "mt-auto mb-4 w-full max-w-md py-6 bg-green-700 text-white rounded-3xl font-black text-2xl uppercase border-2 border-green-400";
             window.addEventListener('devicemotion', handleMotion);
-            setStatus("Monitorizare ACTIVĂ");
+            setStatus("Monitorizare ACTIVĂ (Inclusiv Fundal)");
         } catch (e) { alert("Eroare: " + e.message); }
     }
+
+    // Re-activează WakeLock dacă utilizatorul revine în aplicație
+    document.addEventListener('visibilitychange', async () => {
+        if (wakeLock !== null && document.visibilityState === 'visible') {
+            wakeLock = await navigator.wakeLock.request('screen');
+        }
+    });
 
     function handleMotion(e) {
         if (!isActive || hasAlerted || isCountingDown) return;
@@ -162,7 +186,7 @@
             isFlashOn = !isFlashOn; toggleFlash(isFlashOn);
         }, 500);
         navigator.geolocation.getCurrentPosition((pos) => {
-            const loc = `http://maps.google.com/?q=${pos.coords.latitude},${pos.coords.longitude}`;
+            const loc = `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`;
             document.getElementById('sms-btn').href = `sms:+40729592904?body=URGENTA! Andrei Popescu (Epilepsie) are o criza. Locatie: ${loc}`;
         });
     }
