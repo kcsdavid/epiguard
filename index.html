@@ -24,7 +24,7 @@
             <img src="logo.jpeg" class="w-32 h-32 object-contain rounded-full border border-white/10 mb-2 shadow-2xl">
             <h1 class="text-4xl font-black mb-4"><span class="text-blue-500">Epi</span><span class="text-purple-500">Guard</span></h1>
             
-            <img src="med.jpeg" class="w-full max-w-sm h-auto rounded-3xl border-2 border-white/20 shadow-2xl mb-6 object-cover">
+            <img src="123.jpeg" class="w-full max-w-sm h-auto rounded-3xl border-2 border-white/20 shadow-2xl mb-6 object-cover">
         </header>
 
         <div id="monitor-box" onclick="handleManualTrigger()" class="w-full max-w-md bg-black/40 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 mb-4 text-center shadow-2xl active:scale-95 transition-transform">
@@ -93,7 +93,6 @@
         if (clickCount >= 3) { clickCount = 0; startCountdown(); }
     }
 
-    // Păcălește sistemul să creadă că redăm muzică pentru a nu închide procesul în fundal
     function keepAliveAudio() {
         if (!audioCtx) return;
         const buffer = audioCtx.createBuffer(1, 1, 22050);
@@ -133,7 +132,6 @@
         } catch (e) { alert("Eroare: " + e.message); }
     }
 
-    // Re-activează WakeLock dacă utilizatorul revine în aplicație
     document.addEventListener('visibilitychange', async () => {
         if (wakeLock !== null && document.visibilityState === 'visible') {
             wakeLock = await navigator.wakeLock.request('screen');
